@@ -1,2 +1,2 @@
-# latency-monitoring-tool
-Latency monitoring tool for wireless, local or emulated traffic.
+# NETHINT - NETwork Home INTerference
+...is a passive measurement tool for home network interference detection.
