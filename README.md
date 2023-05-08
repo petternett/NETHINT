@@ -7,11 +7,11 @@ It uses reliable sources of metrics that can be correlated to create an easily i
 The tool can be downloaded as follows: 
 ```bash
 git clone https://github.com/petternett/NETHINT.git
-cd NETHINT
 ```
 
 then, install the required Python libraries by running
 ```bash
+cd NETHINT
 pip install -r requirements.txt
 ```
 
