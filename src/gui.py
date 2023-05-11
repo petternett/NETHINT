@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 import numpy as np
 import pyqtgraph as pg
@@ -54,10 +55,10 @@ class ValueWidget(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setText("Value: ")
+        # self.setText("")
 
     def update(self, text=""):
-        self.setText(f"Value: {text}")
+        self.setText(text)
 
 
 class MyPlotWidget(pg.GraphicsLayoutWidget):
@@ -250,7 +251,7 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
             # For local and emulated, display destination IPs instead of MACs.
             flow_key = (f"{buf.mac_a}>{buf.mac_b}"
                         if check_mode() == "wireless"
-                        else f"{buf.ip_src}:{buf.port_a}>{buf.ip_dst}:{buf.port_b}")
+                        else f"{buf.ip_src}>{buf.ip_dst}")
 
             # Only needs to be set once per flow key
             if flow_key not in datapoint_buf:
@@ -279,7 +280,8 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
 
 
         if update_smoothness is not None:
-            new_alpha = (100-update_smoothness) * 0.01
+            # new_alpha = (100-update_smoothness) * 0.01  # Linear
+            new_alpha = pow(0.83*math.e, -0.06*update_smoothness)  # Exponential
             self.ewma_alpha = new_alpha
             self.ewma_update_all()
 
@@ -296,7 +298,7 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
                 vendor = self.host_mac_lookup(buf.mac_a)
                 _name = f"{vendor}_{buf.mac_a[9:]}"
             else:
-                _name = f"{buf.ip_src}:{buf.port_a}"
+                _name = f"{buf.ip_src}"
 
             # Create brush
             brush = self.brushes[flow_key]
@@ -337,7 +339,7 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
                 vendor = self.host_mac_lookup(buf.mac_a)
                 _name = f"{vendor}_{buf.mac_a[9:]}"
             else:
-                _name = f"{buf.ip_src}:{buf.port_a}"
+                _name = f"{buf.ip_src}"
 
             # Create brush
             _pen = pg.mkPen(self.brushes[flow_key].color(), width=1)

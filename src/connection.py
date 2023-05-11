@@ -57,7 +57,8 @@ class Flow:
         self.cap_time = 0
         self.rtt = 0
         # TCP
-        self.pair_pkts = {}  # ts -> TCPPacket
+        self.pair_pkts = {}  # ack -> TCPPacket
+        self.ts_pair   = {}  # ts  -> TCPPacket
         self.next_seq = 0
         self.last_ack = 0
         self.window = 0

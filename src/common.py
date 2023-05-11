@@ -69,13 +69,6 @@ def set_mode(arg: str='wireless') -> None:
 def check_mode() -> str:
     return mode
 
-# Emulated mode IP list
-def emulated_ip_list() -> [str]:
-    return ['10.1.3.100',
-            '10.1.4.100',
-            '10.2.1.100',
-            '10.2.2.100']
-
 
 # GUI
 gui_enabled = False
@@ -120,6 +113,11 @@ If addresses are equal, return True if A has largest port number.
 def cmp_address(addr_a, port_a, addr_b, port_b) -> bool:
     return addr_a > addr_b if addr_a != addr_b else port_a > port_b
 
+emulated_ip_list = ['10.1.3.100',
+                    '10.1.4.100',
+                    '10.2.1.100',
+                    '10.2.2.100']
+
 """ Check if a packet pkt is from local. Used to check for outgoing packets.
     Note that this is not the same as the flow direction, which is arbitrary.
     This function checks whether a packet went from a local to a remote device for all modes.
@@ -141,7 +139,8 @@ def check_from_local(pkt) -> bool:
             return (pkt.pkt.haslayer(Dot11)
                     and is_valid_ssid(pkt.pkt.addr1))
         case "emulated":
-            return pkt.ip_dst in emulated_ip_list()
+            lst = emulated_ip_list
+            return pkt.ip_dst in lst
 
 
 """ Check if a packet pkt is to local. Used to check for incoming packets. """
@@ -154,4 +153,5 @@ def check_to_local(pkt) -> bool:
             return (pkt.pkt.haslayer(Dot11)
                     and is_valid_ssid(pkt.pkt.addr2))
         case "emulated":
-            return pkt.ip_src in emulated_ip_list()
+            lst = emulated_ip_list
+            return pkt.ip_src in lst

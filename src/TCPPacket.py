@@ -236,7 +236,7 @@ class TCPPacket:
         The first SYN packet determines whether a TCP connection is outgoing or incoming.
         Return RTT if check_pkt (SYN + maybe ACK) was from local.
     """
-    # TODO duplicate code. merge into one, check pkt_type == SYN or pkt_type == FIN
+    # TODO duplicate code (check_fin). merge into one, check pkt_type == SYN or pkt_type == FIN
     def check_syn(self) -> int | None:
 
         # Previous packet was SYN, current packet is ACK
@@ -281,25 +281,24 @@ class TCPPacket:
             return rtt
 
 
-    """ Normal packet pairing explained line-by-line:
+    """ Normal packet pairing:
 
-        Current packet is an ACK, and
-        matching packet in reverse direction exists, and
-        Don't check the same TS twice.
-          If not TS-packet: don't check same ACK twice,
-                            and don't count retransmisions.
-        Checked pkt was sent from a/the local device:
+        Check ts_pair[self.tsecr] first. if the matched packet is a
+        retransmission (and is not the same TS as previous pkt in
+        flow direction), use it.
+        Otherwise, index check_pkt from self.ack.
     """
     def do_packet_pairing(self) -> int | None:
-        pair_pkt_key = self.tsecr if self.ts else self.ack
-        check_pkt = self.flow_direction.rev.pair_pkts.get(pair_pkt_key, False)
-        if ((self.flags & ACK) > 0
-                and check_pkt
-                and check_from_local(check_pkt)
-                and ((self.ts and self.tsecr != self.flow_direction.tsecr)
-                     or (not self.ts
-                         and self.ack != self.flow_direction.last_ack
-                         and not check_pkt.is_retransmission))):
+
+        # If check_pkt is a retransmission, it will be in ts_pair
+        check_pkt = None
+        if self.ts and self.tsecr != self.flow_direction.tsecr:
+            check_pkt = self.flow_direction.rev.ts_pair.get(self.tsecr, None)
+        
+        if not check_pkt and self.ack != self.flow_direction.last_ack:
+            check_pkt = self.flow_direction.rev.pair_pkts.get(self.ack, None)
+
+        if (self.flags & ACK) > 0 and check_pkt:
 
             rtt = (self.cap_time - check_pkt.cap_time) * 1000
             if rtt > 1000:
@@ -307,7 +306,11 @@ class TCPPacket:
             if get_output():
                 print(f"Found valid RTT of {self.ip_src}>{self.ip_dst}: {rtt} ms.")
             
-            del self.flow_direction.rev.pair_pkts[pair_pkt_key]
+            # if check_pkt_is_retransmit:
+            #     del self.flow_direction.rev.ts_pair[self.tsecr]
+            # else:
+            #     del self.flow_direction.rev.pair_pkts[self.ack]
+
             return rtt
 
 
@@ -325,7 +328,7 @@ class TCPPacket:
             #     self.flow_direction.owd_base = owd
             # self.owd_diff = owd - self.flow_direction.owd_base
 
-            # NOTE: Relative to previous OWD measurement in flow
+            # NOTE: Relative to previous OWD measurement in flow (what we want)
             if self.flow_direction.owd is None:
                 self.flow_direction.owd = owd
                 self.owd_diff = 0
@@ -382,18 +385,20 @@ class TCPPacket:
         # (skips the "exists in flow" check that TS packets do)
 
         # SYN, SYN/ACK, FIN or FIN/ACK packets are always added
-        if (self.flags & (SYN|FIN)) > 0:
+        if (self.flags & (SYN|FIN)) > 0 and check_from_local(self):
             self.flow_direction.pair_pkts[self.next_seq] = self
 
-        else:
-            # Timestamps enabled
-            if self.ts:
-                if (self.tsval not in self.flow_direction.pair_pkts
-                        and self.seg_len > 0):
-                    self.flow_direction.pair_pkts[self.tsval] = self
+        # Only add data packets
+        elif check_from_local(self) and self.seg_len > 0:
+            # Retransmission with timestamps enabled
+            if (self.is_retransmission
+                    and self.ts
+                    and self.tsval not in self.flow_direction.ts_pair):
+                self.flow_direction.ts_pair[self.tsval] = self
 
-            # Fallback to SEQ/ACK
-            else:
+             # Do not add retransmissions without timestamps enabled
+            elif not self.is_retransmission:
+                # Add by next_seq for SEQ/ACK pairing
                 self.flow_direction.pair_pkts[self.next_seq] = self
 
 
