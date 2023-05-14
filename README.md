@@ -66,3 +66,21 @@ The user can right-click inside a plot and choose "export", which will bring up 
 * Data as a CSV file
 * Plot as a vector file (SVG)
 * Plot as an image file (png, jpg, etc.)
+
+
+## Emulation
+
+If you want to create your own emulated pcaps, the script used in our testing is in ``emulation/topo.py``.
+It requires ``mininet``, ``tc`` and ``xterm`` to be installed on your system.
+To run it, type
+```bash
+sudo mn --custom topo.py --topo [topology] --link tc
+```
+
+Once inside mininet, type the name of the name of the emulation you wish to run, for example
+```
+mininet> init_test
+```
+
+The ``[topology]`` argument is which emulated network topology you wish to use.
+Please see the ``emulation/topo.py`` for a list of pre-configured topologies and emulation functions.
