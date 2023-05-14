@@ -178,7 +178,7 @@ def process_packet(pkt):
                 data_point = DataPoint(mac_dst, mac_src,
                                        pkt[ip_ver].src, pkt[ip_ver].dst,
                                        pkt[TCP].sport, pkt[TCP].dport,
-                                       send_time, tcp_pkt.owd_diff/1000)
+                                       send_time, tcp_pkt.owd_diff)
 
                 plot_data((PLOT_OWD, data_point))
 

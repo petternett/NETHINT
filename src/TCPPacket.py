@@ -336,7 +336,7 @@ class TCPPacket:
 
             _owd_diff = self.flow_direction.owd - owd
             if abs(_owd_diff) < 1000:
-                self.owd_diff = _owd_diff * 1000  # multiply, because of GUI axis units (see gui.py)
+                self.owd_diff = _owd_diff
             if get_output(): print(f"OWD difference from previous: {_owd_diff}")
             self.flow_direction.owd = owd
 
