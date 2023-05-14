@@ -243,8 +243,7 @@ class TCPPacket:
         check_pkt = self.flow_direction.rev.pair_pkts.get(self.ack, False)
         if ((self.flags & ACK) > 0
                 and check_pkt
-                and (check_pkt.flags & SYN)
-                and check_from_local(check_pkt)):
+                and (check_pkt.flags & SYN)):
 
             # Discard retransmitted packets
             if self.is_retransmission or check_pkt.is_retransmission:
