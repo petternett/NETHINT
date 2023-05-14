@@ -162,7 +162,7 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
         # Axes
         y_axis = pg.AxisItem(orientation='left')
         y_axis.setGrid(128)
-        y_axis.setLabel(text='Relative OWD', units='s')  # pg dislikes scaling prefexes
+        y_axis.setLabel(text='Relative OWD')  # No unit as smoothed value is not in ms anymore
 
         x_axis = (pg.DateAxisItem(orientation='bottom', utcOffset=0)
                   if isset_relative_time()
@@ -177,7 +177,6 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
 
         # Signal range scale changes
         self.owd_plot_item.setXLink(self.rtt_plot_item)
-
 
         # --- Update timer --- #
         self.timer = pg.QtCore.QTimer()
@@ -349,7 +348,7 @@ class MyPlotWidget(pg.GraphicsLayoutWidget):
                         pen=_pen,
                         name=_name,
                         hoverable=True,
-                        tip='OWD diff: {y:.5g} ms'.format)
+                        tip='OWD diff: {y:.5g}'.format)
 
             # Add new curve
             self.owd_plots[flow_key] = new_curve

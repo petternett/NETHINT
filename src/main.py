@@ -20,7 +20,6 @@ from common import (
         set_write_pcap,
     )
 from gui import init_plot_obj
-#from db_helpers import get_db
 from logger import start_logger
 
 #DB_NAME = "pkt_db"

@@ -334,9 +334,9 @@ class TCPPacket:
                 self.owd_diff = 0
                 return
 
-            _owd_diff = owd - self.flow_direction.owd
+            _owd_diff = self.flow_direction.owd - owd
             if abs(_owd_diff) < 1000:
-                self.owd_diff = _owd_diff
+                self.owd_diff = _owd_diff * 1000  # multiply, because of GUI axis units (see gui.py)
             if get_output(): print(f"OWD difference from previous: {_owd_diff}")
             self.flow_direction.owd = owd
 
@@ -378,17 +378,15 @@ class TCPPacket:
         self.flow_direction.cap_time = self.cap_time
         self.flow_direction.rtt = self.rtt
 
-        # Add TSval to flow timestamp dictionary.
-        # If timestamps not enabled, fallback to SEQ/ACK.
-        # Only add packets with data (segment length > 0)
-        # For non-TS packets, we want to add the last one each time.
-        # (skips the "exists in flow" check that TS packets do)
-
-        # SYN, SYN/ACK, FIN or FIN/ACK packets are always added
+        """ Add valid outgoing data packets to Timestamp hashmap if it is
+            a retransmission with TCP timestamps enabled, other wise
+            add it to the SEQ/ACK hashmap.
+        """
+        # SYN, SYN/ACK, FIN and FIN/ACK packets are always added
         if (self.flags & (SYN|FIN)) > 0 and check_from_local(self):
             self.flow_direction.pair_pkts[self.next_seq] = self
 
-        # Only add data packets
+        # Only add data packets from local
         elif check_from_local(self) and self.seg_len > 0:
             # Retransmission with timestamps enabled
             if (self.is_retransmission
@@ -396,8 +394,7 @@ class TCPPacket:
                     and self.tsval not in self.flow_direction.ts_pair):
                 self.flow_direction.ts_pair[self.tsval] = self
 
-             # Do not add retransmissions without timestamps enabled
-            elif not self.is_retransmission:
+            else:
                 # Add by next_seq for SEQ/ACK pairing
                 self.flow_direction.pair_pkts[self.next_seq] = self
 
