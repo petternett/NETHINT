@@ -154,7 +154,7 @@ class TCPPacket:
 
         # TODO Window full? (pretty complicated)
 
-        # Keep-Alive self.ack (supersedes DupACK)
+        # Keep-Alive ACK (supersedes DupACK)
         self.is_keepalive_ack = False
         if (self.seg_len == 0
                 and self.window
@@ -216,7 +216,7 @@ class TCPPacket:
             if self.flow_direction.rev.max_to_ack < self.flow_direction.rev.next_seq:
                 self.flow_direction.rev.max_to_ack = self.flow_direction.rev.next_seq
 
-            # TODO check for stalled pure ACKs in reverse direction (wireshark tcp.c)
+            # TODO check for stalled pure ACKs in reverse direction
 
             self.is_acked_lost = True
 
@@ -333,6 +333,9 @@ class TCPPacket:
                 self.owd_diff = 0
                 return
 
+            # NOTE: This is inverted, because doing `owd - prev_owd` results in a
+            #       negative number when there is a higher indication of congestion,
+            #       which is not intuitive at all.
             _owd_diff = self.flow_direction.owd - owd
             if abs(_owd_diff) < 1000:
                 self.owd_diff = _owd_diff
