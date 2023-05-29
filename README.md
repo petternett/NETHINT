@@ -1,6 +1,6 @@
 ![NETHINT logo](images/nethint-logo.png)
 
-# NETHINT - NETwork Home INTerference
+# NETwork Home INTerference
 ...is a passive measurement tool for home network interference detection.
 It uses reliable sources of metrics that can be correlated to create an easily interpreted overview of whether the bottleneck in a connection exists on the local wireless network or not.
 
