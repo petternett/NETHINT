@@ -4,7 +4,7 @@
 ...is a passive measurement tool for home network interference detection.
 It uses reliable sources of metrics that can be correlated to create an easily interpreted overview of whether the bottleneck in a connection exists on the local wireless network or not.
 
-This tool was created as part of a master thesis. The report detailing the motivation, development, and features of it can be read in full at [report.pdf](report.pdf).
+This tool was created as part of a master thesis. The report detailing the motivation, development, and features of it can be read in full in [report.pdf](report.pdf).
 
 ## Installation
 
