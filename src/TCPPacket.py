@@ -29,6 +29,7 @@ class TCPPacket:
         self.cap_time = float(pkt.time) # in µs since epoch
         self.rtt = None
         self.owd_diff = None
+        self.tsval_diff = None
 
         # Parse IP header
         self.ip_src = pkt[ip_ver].src
@@ -87,6 +88,9 @@ class TCPPacket:
 
         # --- Analyze --- #
         self.analyze_packet()
+
+        # --- Find TSval diff of timestamp-enabled packets --- #
+        self.check_tsval()
 
         # --- Find OWD of timestamp-enabled packets --- #
         self.check_owd()
@@ -231,7 +235,7 @@ class TCPPacket:
             self.is_retransmission = True
             if get_output(): print("TCP Retransmission")
 
-    
+
     """ Check RTT of SYN packets.
         The first SYN packet determines whether a TCP connection is outgoing or incoming.
         Return RTT if check_pkt (SYN + maybe ACK) was from local.
@@ -249,7 +253,7 @@ class TCPPacket:
             if self.is_retransmission or check_pkt.is_retransmission:
                 self.con.syn_found = True
                 return None
-            
+
             self.con.syn_found = True
             rtt = (self.cap_time - check_pkt.cap_time) * 1000
             if get_output(): print(f"SYN packet pairing found RTT of {rtt} ms.")
@@ -293,7 +297,7 @@ class TCPPacket:
         check_pkt = None
         if self.ts and self.tsecr != self.flow_direction.tsecr:
             check_pkt = self.flow_direction.rev.ts_pair.get(self.tsecr, None)
-        
+
         if not check_pkt and self.ack != self.flow_direction.last_ack:
             check_pkt = self.flow_direction.rev.pair_pkts.get(self.ack, None)
 
@@ -304,13 +308,28 @@ class TCPPacket:
                 return None
             if get_output():
                 print(f"Found valid RTT of {self.ip_src}>{self.ip_dst}: {rtt} ms.")
-            
+
             # if check_pkt_is_retransmit:
             #     del self.flow_direction.rev.ts_pair[self.tsecr]
             # else:
             #     del self.flow_direction.rev.pair_pkts[self.ack]
 
             return rtt
+
+    """ Check TSval of TS-enabled incoming packets"""
+    def check_tsval(self) -> None:
+        prev_pkt = self.flow_direction.get_prev_pkt()
+        if (self.ts
+                and prev_pkt
+                and check_to_local(self)
+                and check_to_local(prev_pkt)):
+
+            if self.flow_direction.tsval is None:
+                self.flow_direction.tsval = self.tsval
+                self.tsval_diff = 0
+                return
+
+            self.tsval_diff = self.tsval - self.flow_direction.tsval
 
 
     """ Check OWD of TS-enabled incoming packets """
@@ -322,7 +341,7 @@ class TCPPacket:
                 and check_to_local(prev_pkt)):
 
             # NOTE: Relative to first measured OWD in flow
-            owd = self.cap_time - self.tsval
+            owd = int(self.cap_time * 1000) - self.tsval
             # if self.flow_direction.owd_base is None:
             #     self.flow_direction.owd_base = owd
             # self.owd_diff = owd - self.flow_direction.owd_base

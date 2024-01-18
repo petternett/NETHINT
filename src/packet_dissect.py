@@ -23,7 +23,7 @@ from common import (
         get_ssid,
         add_mac,
         is_valid_ssid,
-        get_output, 
+        get_output,
         isset_gui,
         isset_log,
         isset_relative_time,
@@ -84,7 +84,7 @@ def process_packet(pkt):
     if pkt.haslayer(TCP):
 
         # Relative time
-        cap_time = float(pkt.time)  # in µs since epoch
+        cap_time = float(pkt.time) # in s since epoch with µs precision
         rel_time = cap_time
         if get_time_base() is None:
             set_time_base(cap_time)
@@ -125,25 +125,30 @@ def process_packet(pkt):
             noise = radio_pkt.noise
 
         # --- Log data --- #
-        if isset_log() and valid_rtt:
+        if isset_log():
             if get_output(): print(f"Total valid RTTs: {total_valid_rtts}")
             log_obj = {
-                    "proto":    "TCP",
-                    "ip_src":   pkt[ip_ver].src,
-                    "ip_dst":   pkt[ip_ver].dst,
-                    "port_src": pkt[TCP].sport,
-                    "port_dst": pkt[TCP].dport,
-                    "mac_src":  mac_src,
-                    "mac_dst":  mac_dst,
-                    "rel_time": rel_time,
-                    "cap_time": cap_time,
-                    "rtt":      tcp_pkt.rtt,
-                    "rssi":     rssi,
-                    "rate":     rate,
-                    "noise":    noise,
-                    "owd":      tcp_pkt.owd_diff,
-                    "cid":      tcp_pkt.cid,
-                    "fid":      tcp_pkt.fid,
+                    "proto":      "TCP",
+                    "ip_src":     pkt[ip_ver].src,
+                    "ip_dst":     pkt[ip_ver].dst,
+                    "port_src":   pkt[TCP].sport,
+                    "port_dst":   pkt[TCP].dport,
+                    "mac_src":    mac_src,
+                    "mac_dst":    mac_dst,
+                    "rel_time":   rel_time,
+                    "cap_time":   cap_time,
+                    "rtt":        tcp_pkt.rtt,
+                    "rssi":       rssi,
+                    "rate":       rate,
+                    "noise":      noise,
+                    "owd_diff":   tcp_pkt.owd_diff,
+                    "owd":        tcp_pkt.flow_direction.owd,
+                    "tsval":      tcp_pkt.tsval,
+                    "tsval_diff": tcp_pkt.tsval_diff,
+                    "tsecr":      tcp_pkt.tsecr,
+                    "is_lost":    tcp_pkt.is_lost,
+                    "cid":        tcp_pkt.cid,
+                    "fid":        tcp_pkt.fid,
                    }
             logger_add(log_obj)
 
@@ -155,7 +160,7 @@ def process_packet(pkt):
             plot_data((UPDATE_VALUE, f"Number of packets: {total_pkts}"))
 
             # Plot RTT
-            if valid_rtt:    
+            if valid_rtt:
                 data_point = DataPoint(mac_dst, mac_src,
                                        pkt[ip_ver].src, pkt[ip_ver].dst,
                                        pkt[TCP].sport, pkt[TCP].dport,
@@ -172,7 +177,7 @@ def process_packet(pkt):
                                        send_time, None)
 
                 plot_data((PLOT_LOSS, data_point))
-        
+
             # Plot OWD
             if tcp_pkt.owd_diff is not None:
                 data_point = DataPoint(mac_dst, mac_src,
